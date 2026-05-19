@@ -4,6 +4,7 @@ import express from 'express';
 import { fileURLToPath } from 'url';
 import authRoutes from './routes/authRoutes.js';
 import leadRoutes from './routes/leadRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
 import { connectDB } from './config/db.js';
 import { errorMiddleware } from './middlewares/errorMiddleware.js';
 
@@ -40,6 +41,7 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/leads', leadRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use(errorMiddleware);
 
 async function startServer(): Promise<void> {
