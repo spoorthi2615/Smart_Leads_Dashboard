@@ -43,18 +43,22 @@ export default function Register() {
   };
 
   return (
-    <div className="main-content">
-      <section className="login-card">
-        <h1>Create account</h1>
-        <p>Register with your email and join the lead management dashboard.</p>
+    <div className="auth-page font-geist">
+      <section className="auth-card">
+        <div className="text-center mb-6">
+          <h1 className="text-primary text-headline-sm font-semibold mb-1">Smart Leads</h1>
+          <p className="text-label-md text-on-surface-variant">Enterprise SaaS</p>
+        </div>
+        <h2 className="text-headline-md font-semibold mb-1">Create account</h2>
+        <p className="subtitle">Register with your email and join the lead management dashboard.</p>
         <form className="auth-form" onSubmit={handleSubmit}>
           <label>
             Full name
             <input
               type="text"
-              className="input-field"
               value={name}
               onChange={(event) => setName(event.target.value)}
+              placeholder="John Doe"
               required
             />
           </label>
@@ -62,9 +66,9 @@ export default function Register() {
             Email
             <input
               type="email"
-              className="input-field"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@company.com"
               required
             />
           </label>
@@ -72,26 +76,37 @@ export default function Register() {
             Password
             <input
               type="password"
-              className="input-field"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              placeholder="••••••••"
               required
             />
           </label>
           <label>
             Role
-            <select className="select-field" value={role} onChange={(event) => setRole(event.target.value as 'Admin' | 'Sales User')}>
+            <select value={role} onChange={(event) => setRole(event.target.value as 'Admin' | 'Sales User')}>
               <option value="Sales User">Sales User</option>
               <option value="Admin">Admin</option>
             </select>
           </label>
-          {error ? <div className="error-state">{error}</div> : null}
-          <button type="submit" className="button button-primary" disabled={isSubmitting}>
+          {error && (
+            <div className="p-3 bg-error-container text-on-error-container text-body-md rounded-lg">
+              {error}
+            </div>
+          )}
+          <button
+            type="submit"
+            className="w-full py-2.5 bg-primary text-on-primary rounded-lg text-label-md font-medium hover:bg-primary/90 transition-all disabled:opacity-50"
+            disabled={isSubmitting}
+          >
             {isSubmitting ? 'Creating account...' : 'Register'}
           </button>
         </form>
-        <p>
-          Already registered? <Link to="/login">Sign in</Link>
+        <p className="text-center text-body-md text-on-surface-variant mt-4">
+          Already registered?{' '}
+          <Link to="/login" className="text-primary font-medium hover:underline">
+            Sign in
+          </Link>
         </p>
       </section>
     </div>

@@ -12,7 +12,12 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   const { isAuthenticated, isLoading, isInitialized, user } = useAuth();
 
   if (!isInitialized || isLoading) {
-    return <div className="loading-screen">Checking authentication...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-on-surface-variant font-geist">
+        <span className="material-symbols-outlined animate-spin mr-2">progress_activity</span>
+        Checking authentication...
+      </div>
+    );
   }
 
   if (!isAuthenticated) {

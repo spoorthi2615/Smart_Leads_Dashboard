@@ -23,9 +23,28 @@ export interface Lead {
   email: string;
   status: LeadStatus;
   source: LeadSource;
+  phone?: string;
+  company?: string;
+  location?: string;
   createdBy: LeadAuthor;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface LeadActivity {
+  id: string;
+  type: 'status_change' | 'email_sent' | 'lead_imported' | 'note_added';
+  title: string;
+  description: string;
+  timestamp: string;
+  metadata?: Record<string, string>;
+}
+
+export interface LeadNote {
+  id: string;
+  content: string;
+  author: string;
+  createdAt: string;
 }
 
 export interface PaginationData {
