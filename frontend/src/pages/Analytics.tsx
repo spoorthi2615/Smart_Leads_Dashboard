@@ -53,7 +53,7 @@ export default function Analytics() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px] text-on-surface-variant">
+      <div className="flex items-center justify-center min-h-[400px] text-on-surface-variant dark:text-slate-400">
         <span className="material-symbols-outlined animate-spin mr-2">progress_activity</span>
         Loading analytics...
       </div>
@@ -117,15 +117,15 @@ export default function Analytics() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h2 className="text-headline-lg text-on-surface">Analytics Performance</h2>
-          <p className="text-body-md text-on-surface-variant">
+          <p className="text-body-md text-on-surface-variant dark:text-slate-400">
             Real-time tracking of your sales pipeline from actual lead data.
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-surface-container px-2 py-1 rounded-xl border border-outline-variant">
-          <span className="text-label-md text-on-surface-variant px-2 py-1 rounded-lg bg-surface-container-lowest shadow-soft">
+        <div className="flex items-center gap-2 bg-surface-container px-2 py-1 rounded-xl border border-outline-variant dark:border-slate-700">
+          <span className="text-label-md text-on-surface-variant dark:text-slate-400 px-2 py-1 rounded-lg bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 shadow-soft">
             Last 30 Days
           </span>
-          <span className="text-label-md text-on-surface-variant px-2 py-1 cursor-pointer hover:bg-surface-container-lowest transition-all rounded-lg">
+          <span className="text-label-md text-on-surface-variant dark:text-slate-400 px-2 py-1 cursor-pointer hover:bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 transition-all rounded-lg">
             All Time
           </span>
         </div>
@@ -174,18 +174,18 @@ export default function Analytics() {
       {/* Charts Bento Grid */}
       <div className="grid grid-cols-12 gap-5">
         {/* Lead Volume Bar Chart */}
-        <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-soft">
+        <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 border border-outline-variant dark:border-slate-700 rounded-xl p-6 shadow-soft">
           <div className="flex justify-between items-center mb-8">
             <div>
               <h4 className="text-headline-sm">Lead Volume Over Time</h4>
-              <p className="text-label-md text-on-surface-variant">Daily leads created in the last 30 days</p>
+              <p className="text-label-md text-on-surface-variant dark:text-slate-400">Daily leads created in the last 30 days</p>
             </div>
             <button className="p-1 hover:bg-surface-container rounded transition-colors">
               <span className="material-symbols-outlined text-[18px]">more_vert</span>
             </button>
           </div>
           {chartBars.length === 0 || data.dailyVolume.length === 0 ? (
-            <div className="h-[320px] flex items-center justify-center text-on-surface-variant">
+            <div className="h-[320px] flex items-center justify-center text-on-surface-variant dark:text-slate-400">
               <span className="material-symbols-outlined text-[48px] opacity-20 mr-2">bar_chart</span>
               No lead data in the last 30 days
             </div>
@@ -207,7 +207,7 @@ export default function Analytics() {
                   );
                 })}
               </div>
-              <div className="flex justify-between mt-4 px-1 text-label-md text-on-surface-variant opacity-50">
+              <div className="flex justify-between mt-4 px-1 text-label-md text-on-surface-variant dark:text-slate-400 opacity-50">
                 {data.dailyVolume.length > 0 && (
                   <>
                     <span>{new Date(data.dailyVolume[0]._id).toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}</span>
@@ -227,9 +227,9 @@ export default function Analytics() {
         </div>
 
         {/* Donut Chart: Leads by Source */}
-        <div className="col-span-12 lg:col-span-4 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-soft flex flex-col">
+        <div className="col-span-12 lg:col-span-4 bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 border border-outline-variant dark:border-slate-700 rounded-xl p-6 shadow-soft flex flex-col">
           <h4 className="text-headline-sm mb-1">Leads by Source</h4>
-          <p className="text-label-md text-on-surface-variant mb-8">Distribution by origin channel</p>
+          <p className="text-label-md text-on-surface-variant dark:text-slate-400 mb-8">Distribution by origin channel</p>
           <div className="flex-grow flex items-center justify-center relative">
             <div className="relative w-48 h-48">
               <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
@@ -251,7 +251,7 @@ export default function Analytics() {
                 <span className="text-headline-md font-semibold">
                   {sourceTotal >= 1000 ? `${(sourceTotal / 1000).toFixed(1)}k` : sourceTotal}
                 </span>
-                <p className="text-label-sm text-on-surface-variant">TOTAL</p>
+                <p className="text-label-sm text-on-surface-variant dark:text-slate-400">TOTAL</p>
               </div>
             </div>
           </div>
@@ -269,11 +269,11 @@ export default function Analytics() {
         </div>
 
         {/* Pipeline Status Bars */}
-        <div className="col-span-12 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-soft">
+        <div className="col-span-12 bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 border border-outline-variant dark:border-slate-700 rounded-xl p-6 shadow-soft">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h4 className="text-headline-sm">Leads by Pipeline Status</h4>
-              <p className="text-label-md text-on-surface-variant">Current stage distribution from your database</p>
+              <p className="text-label-md text-on-surface-variant dark:text-slate-400">Current stage distribution from your database</p>
             </div>
             <button className="bg-surface-container-low px-4 py-2 rounded-lg text-label-md text-primary flex items-center gap-1 hover:bg-surface-container-high transition-all">
               View Leads
@@ -293,7 +293,7 @@ export default function Analytics() {
                 <div key={item.label} className="space-y-1">
                   <div className="flex justify-between text-label-md">
                     <span className="text-on-surface font-semibold">{item.label}</span>
-                    <span className="text-on-surface-variant">
+                    <span className="text-on-surface-variant dark:text-slate-400">
                       {item.count.toLocaleString()} Lead{item.count !== 1 ? 's' : ''}
                     </span>
                   </div>
@@ -337,7 +337,7 @@ export default function Analytics() {
         </div>
 
         {/* Quick Stats */}
-        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-soft">
+        <div className="bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 border border-outline-variant dark:border-slate-700 rounded-xl p-6 shadow-soft">
           <h4 className="text-headline-sm mb-6">Quick Breakdown</h4>
           <div className="space-y-4">
             {data.pipeline.map((item) => {
@@ -354,7 +354,7 @@ export default function Analytics() {
                   </div>
                   <div className="flex-grow">
                     <p className="text-label-md text-on-surface font-bold">{item.label}</p>
-                    <p className="text-label-sm text-on-surface-variant">{item.count.toLocaleString()} leads</p>
+                    <p className="text-label-sm text-on-surface-variant dark:text-slate-400">{item.count.toLocaleString()} leads</p>
                   </div>
                 </div>
               );

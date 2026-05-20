@@ -141,7 +141,7 @@ export default function LeadsOverview() {
     'bg-secondary-container text-on-secondary-container',
     'bg-primary/20 text-primary',
     'bg-tertiary-fixed-dim/30 text-tertiary',
-    'bg-surface-variant text-on-surface-variant',
+    'bg-surface-variant text-on-surface-variant dark:text-slate-400',
   ];
 
   return (
@@ -150,23 +150,23 @@ export default function LeadsOverview() {
       <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h2 className="text-headline-lg text-on-surface">Leads Dashboard</h2>
-          <p className="text-body-md text-on-surface-variant mt-1">
+          <p className="text-body-md text-on-surface-variant dark:text-slate-400 mt-1">
             Manage and track your global sales pipeline in real-time.
           </p>
         </div>
       </div>
 
       {/* Control Bar */}
-      <section className="bg-surface-container-lowest rounded-xl border border-outline-variant p-4 mb-6 shadow-soft">
+      <section className="bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 rounded-xl border border-outline-variant dark:border-slate-700 p-4 mb-6 shadow-soft">
         <div className="flex flex-col xl:flex-row gap-4 items-center justify-between">
           <div className="flex flex-wrap items-center gap-4 w-full">
             {/* Status Filter */}
             <div className="flex items-center gap-2">
-              <span className="text-label-md text-on-surface-variant">Status:</span>
-              <div className="flex bg-surface-container-low p-1 rounded-lg border border-outline-variant/30">
+              <span className="text-label-md text-on-surface-variant dark:text-slate-400">Status:</span>
+              <div className="flex bg-surface-container-low p-1 rounded-lg border border-outline-variant dark:border-slate-700/30">
                 <button
                   onClick={() => setStatusFilter('')}
-                  className={`px-2 py-1 rounded-md text-label-sm transition-all ${statusFilter === '' ? 'bg-surface-container-lowest text-primary shadow-soft font-semibold' : 'text-on-surface-variant hover:text-on-surface'
+                  className={`px-2 py-1 rounded-md text-label-sm transition-all ${statusFilter === '' ? 'bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 text-primary shadow-soft font-semibold' : 'text-on-surface-variant dark:text-slate-400 hover:text-on-surface'
                     }`}
                 >
                   All
@@ -175,7 +175,7 @@ export default function LeadsOverview() {
                   <button
                     key={s}
                     onClick={() => setStatusFilter(statusFilter === s ? '' : s)}
-                    className={`px-2 py-1 rounded-md text-label-sm transition-all ${statusFilter === s ? 'bg-surface-container-lowest text-primary shadow-soft font-semibold' : 'text-on-surface-variant hover:text-on-surface'
+                    className={`px-2 py-1 rounded-md text-label-sm transition-all ${statusFilter === s ? 'bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 text-primary shadow-soft font-semibold' : 'text-on-surface-variant dark:text-slate-400 hover:text-on-surface'
                       }`}
                   >
                     {s}
@@ -186,11 +186,11 @@ export default function LeadsOverview() {
 
             {/* Source Filter */}
             <div className="flex items-center gap-2">
-              <span className="text-label-md text-on-surface-variant">Source:</span>
+              <span className="text-label-md text-on-surface-variant dark:text-slate-400">Source:</span>
               <select
                 value={sourceFilter}
                 onChange={(e) => setSourceFilter(e.target.value as LeadSource | '')}
-                className="bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-1.5 text-label-md focus:ring-primary focus:border-primary"
+                className="bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 border border-outline-variant dark:border-slate-700 rounded-lg px-4 py-1.5 text-label-md focus:ring-primary focus:border-primary"
               >
                 <option value="">All Channels</option>
                 {sourceOptions.map((s) => (
@@ -201,11 +201,11 @@ export default function LeadsOverview() {
 
             {/* Sort Order */}
             <div className="flex items-center gap-2">
-              <span className="text-label-md text-on-surface-variant">Sort:</span>
+              <span className="text-label-md text-on-surface-variant dark:text-slate-400">Sort:</span>
               <select
                 value={sortOrder}
                 onChange={(e) => { setSortOrder(e.target.value as 'asc' | 'desc'); setPagination(p => ({ ...p, page: 1 })); }}
-                className="bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-1.5 text-label-md focus:ring-primary focus:border-primary"
+                className="bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 border border-outline-variant dark:border-slate-700 rounded-lg px-4 py-1.5 text-label-md focus:ring-primary focus:border-primary"
               >
                 <option value="desc">Latest First</option>
                 <option value="asc">Oldest First</option>
@@ -214,14 +214,14 @@ export default function LeadsOverview() {
 
             {/* Search */}
             <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-container-low rounded-lg border border-outline-variant/30 w-full max-w-xs">
-                <span className="material-symbols-outlined text-on-surface-variant text-[18px]">search</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-container-low rounded-lg border border-outline-variant dark:border-slate-700/30 w-full max-w-xs">
+                <span className="material-symbols-outlined text-on-surface-variant dark:text-slate-400 text-[18px]">search</span>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search leads..."
-                  className="bg-transparent border-none focus:outline-none focus:ring-0 text-body-md w-full placeholder:text-on-surface-variant/50"
+                  className="bg-transparent border-none focus:outline-none focus:ring-0 text-body-md w-full placeholder:text-on-surface-variant dark:text-slate-400/50"
                 />
               </div>
             </div>
@@ -232,19 +232,19 @@ export default function LeadsOverview() {
               type="button"
               onClick={handleExport}
               disabled={isExporting}
-              className="hidden sm:flex px-4 py-1.5 bg-surface-container-lowest border border-primary text-primary rounded-lg text-label-md font-medium hover:bg-surface-container-low transition-all items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="hidden sm:flex px-4 py-1.5 bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 border border-primary text-primary rounded-lg text-label-md font-medium hover:bg-surface-container-low transition-all items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="material-symbols-outlined text-[18px]">{isExporting ? 'progress_activity' : 'file_download'}</span>
               {isExporting ? 'Exporting...' : 'Export CSV'}
             </button>
-            <span className="text-label-md text-on-surface-variant italic whitespace-nowrap">{leadCountLabel}</span>
+            <span className="text-label-md text-on-surface-variant dark:text-slate-400 italic whitespace-nowrap">{leadCountLabel}</span>
           </div>
         </div>
       </section>
 
       {/* Main Table */}
       {isLoading ? (
-        <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-16 flex items-center justify-center text-on-surface-variant">
+        <div className="bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 rounded-xl border border-outline-variant dark:border-slate-700 p-16 flex items-center justify-center text-on-surface-variant dark:text-slate-400">
           <span className="material-symbols-outlined animate-spin mr-2">progress_activity</span>
           Loading leads...
         </div>
@@ -254,32 +254,32 @@ export default function LeadsOverview() {
           <button onClick={() => void fetchLeads()} className="ml-4 underline">Retry</button>
         </div>
       ) : leads.length === 0 ? (
-        <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-16 text-center">
-          <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30 mb-4 block">person_search</span>
+        <div className="bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 rounded-xl border border-outline-variant dark:border-slate-700 p-16 text-center">
+          <span className="material-symbols-outlined text-[48px] text-on-surface-variant dark:text-slate-400/30 mb-4 block">person_search</span>
           <h3 className="text-headline-sm text-on-surface mb-2">No leads found</h3>
-          <p className="text-body-md text-on-surface-variant">Try adjusting your filters or adding new leads.</p>
+          <p className="text-body-md text-on-surface-variant dark:text-slate-400">Try adjusting your filters or adding new leads.</p>
         </div>
       ) : (
-        <section className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-soft overflow-hidden">
+        <section className="bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 rounded-xl border border-outline-variant dark:border-slate-700 shadow-soft overflow-hidden">
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-surface-container-low/50 border-b border-outline-variant">
+                <tr className="bg-surface-container-low/50 border-b border-outline-variant dark:border-slate-700">
                   <th className="p-4 w-12">
                     <input
                       aria-label="Select all visible leads"
                       type="checkbox"
                       checked={selectedRows.size === leads.length && leads.length > 0}
                       onChange={toggleSelectAll}
-                      className="rounded border-outline-variant text-primary focus:ring-primary"
+                      className="rounded border-outline-variant dark:border-slate-700 text-primary focus:ring-primary"
                     />
                   </th>
-                  <th className="px-4 py-2 text-label-sm text-on-surface-variant uppercase tracking-wider">Name</th>
-                  <th className="px-4 py-2 text-label-sm text-on-surface-variant uppercase tracking-wider">Email</th>
-                  <th className="px-4 py-2 text-label-sm text-on-surface-variant uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-2 text-label-sm text-on-surface-variant uppercase tracking-wider">Source</th>
-                  <th className="px-4 py-2 text-label-sm text-on-surface-variant uppercase tracking-wider">Created Date</th>
-                  <th className="px-4 py-2 text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Actions</th>
+                  <th className="px-4 py-2 text-label-sm text-on-surface-variant dark:text-slate-400 uppercase tracking-wider">Name</th>
+                  <th className="px-4 py-2 text-label-sm text-on-surface-variant dark:text-slate-400 uppercase tracking-wider">Email</th>
+                  <th className="px-4 py-2 text-label-sm text-on-surface-variant dark:text-slate-400 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-2 text-label-sm text-on-surface-variant dark:text-slate-400 uppercase tracking-wider">Source</th>
+                  <th className="px-4 py-2 text-label-sm text-on-surface-variant dark:text-slate-400 uppercase tracking-wider">Created Date</th>
+                  <th className="px-4 py-2 text-label-sm text-on-surface-variant dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/30">
@@ -296,7 +296,7 @@ export default function LeadsOverview() {
                         type="checkbox"
                         checked={selectedRows.has(lead.id)}
                         onChange={() => toggleRow(lead.id)}
-                        className="rounded border-outline-variant text-primary focus:ring-primary"
+                        className="rounded border-outline-variant dark:border-slate-700 text-primary focus:ring-primary"
                       />
                     </td>
                     <td className="px-4 py-2">

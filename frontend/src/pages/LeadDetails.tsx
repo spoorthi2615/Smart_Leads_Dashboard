@@ -150,7 +150,7 @@ export default function LeadDetails() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px] text-on-surface-variant">
+      <div className="flex items-center justify-center min-h-[400px] text-on-surface-variant dark:text-slate-400">
         <span className="material-symbols-outlined animate-spin mr-2">progress_activity</span>
         Loading lead details...
       </div>
@@ -192,7 +192,7 @@ export default function LeadDetails() {
       {isEditing && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={() => setIsEditing(false)} />
-          <div className="relative w-full max-w-md bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg p-6 z-10">
+          <div className="relative w-full max-w-md bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 border border-outline-variant dark:border-slate-700 rounded-xl shadow-lg p-6 z-10">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-headline-sm font-semibold">Edit Lead</h2>
               <button onClick={() => setIsEditing(false)} className="p-1 hover:bg-surface-container rounded-lg">
@@ -204,38 +204,38 @@ export default function LeadDetails() {
             )}
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="block text-label-md text-on-surface-variant mb-1">Full Name</label>
+                <label className="block text-label-md text-on-surface-variant dark:text-slate-400 mb-1">Full Name</label>
                 <input
                   type="text" required value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className={`w-full px-4 py-2.5 bg-surface-container-lowest border ${fieldErrors.name ? 'border-error ring-1 ring-error/20' : 'border-outline-variant'} rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all`}
+                  className={`w-full px-4 py-2.5 bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 border ${fieldErrors.name ? 'border-error ring-1 ring-error/20' : 'border-outline-variant dark:border-slate-700'} rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all`}
                 />
                 {fieldErrors.name && <p className="mt-1 text-label-sm text-error">{fieldErrors.name}</p>}
               </div>
               <div>
-                <label className="block text-label-md text-on-surface-variant mb-1">Email Address</label>
+                <label className="block text-label-md text-on-surface-variant dark:text-slate-400 mb-1">Email Address</label>
                 <input
                   type="email" required value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
-                  className={`w-full px-4 py-2.5 bg-surface-container-lowest border ${fieldErrors.email ? 'border-error ring-1 ring-error/20' : 'border-outline-variant'} rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all`}
+                  className={`w-full px-4 py-2.5 bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 border ${fieldErrors.email ? 'border-error ring-1 ring-error/20' : 'border-outline-variant dark:border-slate-700'} rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all`}
                 />
                 {fieldErrors.email && <p className="mt-1 text-label-sm text-error">{fieldErrors.email}</p>}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-label-md text-on-surface-variant mb-1">Status</label>
+                  <label className="block text-label-md text-on-surface-variant dark:text-slate-400 mb-1">Status</label>
                   <select
                     value={editStatus} onChange={(e) => setEditStatus(e.target.value as LeadStatus)}
-                    className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full px-4 py-2.5 bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 border border-outline-variant dark:border-slate-700 rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   >
                     {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-label-md text-on-surface-variant mb-1">Source</label>
+                  <label className="block text-label-md text-on-surface-variant dark:text-slate-400 mb-1">Source</label>
                   <select
                     value={editSource} onChange={(e) => setEditSource(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full px-4 py-2.5 bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 border border-outline-variant dark:border-slate-700 rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   >
                     <option value="Website">Website</option>
                     <option value="Instagram">Instagram</option>
@@ -245,7 +245,7 @@ export default function LeadDetails() {
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setIsEditing(false)}
-                  className="flex-1 px-4 py-2.5 border border-outline-variant text-on-surface-variant rounded-lg text-label-md font-medium hover:bg-surface-container-low transition-all"
+                  className="flex-1 px-4 py-2.5 border border-outline-variant dark:border-slate-700 text-on-surface-variant dark:text-slate-400 rounded-lg text-label-md font-medium hover:bg-surface-container-low transition-all"
                 >
                   Cancel
                 </button>
@@ -264,15 +264,15 @@ export default function LeadDetails() {
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
-          <div className="relative w-full max-w-sm bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg p-6 z-10 text-center">
+          <div className="relative w-full max-w-sm bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 border border-outline-variant dark:border-slate-700 rounded-xl shadow-lg p-6 z-10 text-center">
             <span className="material-symbols-outlined text-[48px] text-error mb-4 block">delete_forever</span>
             <h2 className="text-headline-sm font-semibold mb-2">Delete Lead?</h2>
-            <p className="text-body-md text-on-surface-variant mb-6">
+            <p className="text-body-md text-on-surface-variant dark:text-slate-400 mb-6">
               This will permanently delete <strong>{lead.name}</strong>. This action cannot be undone.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2.5 border border-outline-variant text-on-surface-variant rounded-lg text-label-md font-medium hover:bg-surface-container-low"
+                className="flex-1 px-4 py-2.5 border border-outline-variant dark:border-slate-700 text-on-surface-variant dark:text-slate-400 rounded-lg text-label-md font-medium hover:bg-surface-container-low"
               >
                 Cancel
               </button>
@@ -289,7 +289,7 @@ export default function LeadDetails() {
       {/* Back Button */}
       <button
         onClick={() => navigate('/leads')}
-        className="flex items-center gap-1 text-on-surface-variant hover:text-primary text-label-md mb-4 transition-colors"
+        className="flex items-center gap-1 text-on-surface-variant dark:text-slate-400 hover:text-primary text-label-md mb-4 transition-colors"
       >
         <span className="material-symbols-outlined text-[18px]">arrow_back</span>
         Back to Leads
@@ -298,7 +298,7 @@ export default function LeadDetails() {
       {/* Lead Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div className="flex items-start gap-6">
-          <div className="w-20 h-20 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center overflow-hidden">
+          <div className="w-20 h-20 rounded-xl bg-surface-container-high border border-outline-variant dark:border-slate-700 flex items-center justify-center overflow-hidden">
             <div className="w-full h-full bg-primary/20 flex items-center justify-center text-primary text-headline-md font-bold">
               {lead.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
             </div>
@@ -310,11 +310,11 @@ export default function LeadDetails() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <StatusBadge status={lead.status} />
-              <div className="flex items-center gap-1 px-2 py-0.5 bg-surface-container-high text-on-surface-variant rounded-full text-label-sm font-semibold">
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-surface-container-high text-on-surface-variant dark:text-slate-400 rounded-full text-label-sm font-semibold">
                 <span className="material-symbols-outlined text-[14px]">public</span>
                 {lead.source}
               </div>
-              <span className="text-on-surface-variant text-label-sm">
+              <span className="text-on-surface-variant dark:text-slate-400 text-label-sm">
                 • Created {new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
               </span>
             </div>
@@ -354,7 +354,7 @@ export default function LeadDetails() {
                     <span className="material-symbols-outlined">mail</span>
                   </div>
                   <div>
-                    <p className="text-label-sm text-on-surface-variant uppercase tracking-wider">Email Address</p>
+                    <p className="text-label-sm text-on-surface-variant dark:text-slate-400 uppercase tracking-wider">Email Address</p>
                     <p className="text-body-md font-semibold">{lead.email}</p>
                   </div>
                 </div>
@@ -363,7 +363,7 @@ export default function LeadDetails() {
                     <span className="material-symbols-outlined">person</span>
                   </div>
                   <div>
-                    <p className="text-label-sm text-on-surface-variant uppercase tracking-wider">Added By</p>
+                    <p className="text-label-sm text-on-surface-variant dark:text-slate-400 uppercase tracking-wider">Added By</p>
                     <p className="text-body-md font-semibold">{lead.createdBy.name}</p>
                   </div>
                 </div>
@@ -374,7 +374,7 @@ export default function LeadDetails() {
                     <span className="material-symbols-outlined">public</span>
                   </div>
                   <div>
-                    <p className="text-label-sm text-on-surface-variant uppercase tracking-wider">Source Channel</p>
+                    <p className="text-label-sm text-on-surface-variant dark:text-slate-400 uppercase tracking-wider">Source Channel</p>
                     <p className="text-body-md font-semibold">{lead.source}</p>
                   </div>
                 </div>
@@ -383,7 +383,7 @@ export default function LeadDetails() {
                     <span className="material-symbols-outlined">schedule</span>
                   </div>
                   <div>
-                    <p className="text-label-sm text-on-surface-variant uppercase tracking-wider">Last Updated</p>
+                    <p className="text-label-sm text-on-surface-variant dark:text-slate-400 uppercase tracking-wider">Last Updated</p>
                     <p className="text-body-md font-semibold">
                       {new Date(lead.updatedAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
                     </p>
@@ -405,9 +405,9 @@ export default function LeadDetails() {
                   <div className="flex-1">
                     <div className="flex justify-between items-start mb-1">
                       <p className="text-body-md font-bold text-on-surface">{activity.title}</p>
-                      <span className="text-label-md text-on-surface-variant">{formatTime(activity.timestamp)}</span>
+                      <span className="text-label-md text-on-surface-variant dark:text-slate-400">{formatTime(activity.timestamp)}</span>
                     </div>
-                    <p className="text-body-md text-on-surface-variant">{activity.description}</p>
+                    <p className="text-body-md text-on-surface-variant dark:text-slate-400">{activity.description}</p>
                   </div>
                 </div>
               ))}
@@ -442,15 +442,15 @@ export default function LeadDetails() {
             </div>
             <div className="space-y-4">
               {mockNotes.map((note) => (
-                <div key={note.id} className="p-4 bg-surface-container-lowest border border-outline-variant rounded-lg">
-                  <p className="text-body-md italic text-on-surface-variant mb-2">{note.content}</p>
+                <div key={note.id} className="p-4 bg-surface-container-lowest dark:bg-slate-800 dark:border-slate-700 border border-outline-variant dark:border-slate-700 rounded-lg">
+                  <p className="text-body-md italic text-on-surface-variant dark:text-slate-400 mb-2">{note.content}</p>
                   <div className="flex justify-between text-label-sm">
                     <span className="font-bold">{note.author}</span>
                     <span>{relativeTime(note.createdAt)}</span>
                   </div>
                 </div>
               ))}
-              <button className="w-full py-2 border-2 border-dashed border-outline-variant text-on-surface-variant text-label-md rounded-lg hover:border-primary hover:text-primary transition-all">
+              <button className="w-full py-2 border-2 border-dashed border-outline-variant dark:border-slate-700 text-on-surface-variant dark:text-slate-400 text-label-md rounded-lg hover:border-primary hover:text-primary transition-all">
                 + Add new note
               </button>
             </div>
@@ -470,7 +470,7 @@ export default function LeadDetails() {
                   <span>Move to {s}</span>
                   {lead.status === s
                     ? <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                    : <span className="material-symbols-outlined text-on-surface-variant text-[18px]">chevron_right</span>
+                    : <span className="material-symbols-outlined text-on-surface-variant dark:text-slate-400 text-[18px]">chevron_right</span>
                   }
                 </button>
               ))}

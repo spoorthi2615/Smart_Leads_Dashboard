@@ -9,7 +9,7 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   return (
-    <div className="min-h-screen bg-background text-on-surface font-geist">
+    <div className="min-h-screen bg-background dark:bg-slate-950 text-on-surface dark:text-slate-100 font-geist">
       <Sidebar />
       <TopBar />
 

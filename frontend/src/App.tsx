@@ -64,7 +64,7 @@ function App() {
         element={
           <ProtectedRoute>
             <Layout>
-              <div className="flex flex-col items-center justify-center min-h-[400px] text-on-surface-variant">
+              <div className="flex flex-col items-center justify-center min-h-[400px] text-on-surface-variant dark:text-slate-400">
                 <span className="material-symbols-outlined text-[48px] mb-4 opacity-30">assessment</span>
                 <h2 className="text-headline-sm mb-2">Reports</h2>
                 <p className="text-body-md">Coming soon.</p>
@@ -90,7 +90,7 @@ function App() {
         element={
           <ProtectedRoute>
             <Layout>
-              <div className="flex flex-col items-center justify-center min-h-[400px] text-on-surface-variant">
+              <div className="flex flex-col items-center justify-center min-h-[400px] text-on-surface-variant dark:text-slate-400">
                 <span className="material-symbols-outlined text-[48px] mb-4 opacity-30">settings</span>
                 <h2 className="text-headline-sm mb-2">Settings</h2>
                 <p className="text-body-md">Coming soon.</p>
