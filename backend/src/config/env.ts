@@ -20,6 +20,7 @@ interface EnvConfig {
   MONGO_URI: string;
   JWT_SECRET: string;
   FRONTEND_ORIGIN: string;
+  ALLOW_RENDER_ORIGINS: boolean;
 }
 
 /**
@@ -39,8 +40,10 @@ function validateEnv(): EnvConfig {
     errors.push('JWT_SECRET is required');
   }
 
-  if (!process.env.FRONTEND_ORIGIN && process.env.NODE_ENV === 'production') {
-    errors.push('FRONTEND_ORIGIN is required in production');
+  const allowRenderOrigins = (process.env.ALLOW_RENDER_ORIGINS ?? 'false').toLowerCase() === 'true';
+
+  if (!process.env.FRONTEND_ORIGIN && process.env.NODE_ENV === 'production' && !allowRenderOrigins) {
+    errors.push('FRONTEND_ORIGIN is required in production unless ALLOW_RENDER_ORIGINS=true');
   }
 
   if (errors.length > 0) {
@@ -71,6 +74,7 @@ function validateEnv(): EnvConfig {
     MONGO_URI: mongoUri,
     JWT_SECRET: jwtSecret,
     FRONTEND_ORIGIN: frontendOrigin,
+    ALLOW_RENDER_ORIGINS: allowRenderOrigins,
   };
 }
 

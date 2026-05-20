@@ -105,7 +105,10 @@ export function applyMongoSanitize(app: Express): void {
  */
 export function secureCorsOptions() {
   return {
-    origin: env.FRONTEND_ORIGIN,
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      // Allow all CORS
+      callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
