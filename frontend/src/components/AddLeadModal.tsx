@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from '../services/api';
 import type { LeadSource, LeadStatus } from '../types';
+import { useValidationError } from '../hooks/useValidationError';
 
 interface AddLeadModalProps {
   onClose: () => void;
@@ -14,18 +15,27 @@ export default function AddLeadModal({ onClose, onLeadAdded }: AddLeadModalProps
   const [source, setSource] = useState<LeadSource>('Website');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { fieldErrors, parseError, clearErrors } = useValidationError();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
+    clearErrors();
 
     try {
       await api.post('/leads', { name, email, status, source });
       onLeadAdded?.();
       onClose();
-    } catch {
-      setError('Failed to create lead. Please try again.');
+    } catch (err: unknown) {
+      const parsed = parseError(err);
+      if (parsed._global) {
+        setError(parsed._global);
+      } else if (Object.keys(parsed).length > 0) {
+        setError('Please fix the validation errors below.');
+      } else {
+        setError('Failed to create lead. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -62,9 +72,10 @@ export default function AddLeadModal({ onClose, onLeadAdded }: AddLeadModalProps
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className={`w-full px-4 py-2.5 bg-surface-container-lowest border ${fieldErrors.name ? 'border-error ring-1 ring-error/20' : 'border-outline-variant'} rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all`}
               placeholder="e.g. Sarah Jenkins"
             />
+            {fieldErrors.name && <p className="mt-1 text-label-sm text-error">{fieldErrors.name}</p>}
           </div>
 
           <div>
@@ -74,9 +85,10 @@ export default function AddLeadModal({ onClose, onLeadAdded }: AddLeadModalProps
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className={`w-full px-4 py-2.5 bg-surface-container-lowest border ${fieldErrors.email ? 'border-error ring-1 ring-error/20' : 'border-outline-variant'} rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all`}
               placeholder="e.g. sarah@company.com"
             />
+            {fieldErrors.email && <p className="mt-1 text-label-sm text-error">{fieldErrors.email}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

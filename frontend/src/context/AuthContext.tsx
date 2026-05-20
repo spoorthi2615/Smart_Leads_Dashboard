@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { AuthResponse, User } from '../types';
 
@@ -20,29 +20,46 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+interface StoredAuthState {
+  user: User | null;
+  token: string | null;
+  error: string | null;
+}
 
-  useEffect(() => {
-    try {
-      const storedToken = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
+function readStoredAuth(): StoredAuthState {
+  try {
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
 
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser) as User);
-      }
-    } catch {
-      setError('Failed to restore authentication state.');
-    } finally {
-      setIsLoading(false);
-      setIsInitialized(true);
+    if (storedToken && storedUser) {
+      return {
+        token: storedToken,
+        user: JSON.parse(storedUser) as User,
+        error: null,
+      };
     }
-  }, []);
+  } catch {
+    return {
+      user: null,
+      token: null,
+      error: 'Failed to restore authentication state.',
+    };
+  }
+
+  return {
+    user: null,
+    token: null,
+    error: null,
+  };
+}
+
+export function AuthProvider({ children }: AuthProviderProps) {
+  const [storedAuth] = useState(readStoredAuth);
+  const [user, setUser] = useState<User | null>(storedAuth.user);
+  const [token, setToken] = useState<string | null>(storedAuth.token);
+  const [error, setError] = useState<string | null>(storedAuth.error);
+  const isLoading = false;
+  const isInitialized = true;
 
   const login = useCallback((payload: AuthResponse) => {
     setUser(payload.user);
@@ -77,6 +94,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
 

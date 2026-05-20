@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useValidationError } from '../hooks/useValidationError';
+import type { AuthResponse } from '../types';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -9,11 +11,13 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
+  const { fieldErrors, parseError, clearErrors } = useValidationError();
   const navigate = useNavigate();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    clearErrors();
 
     if (!email.trim() || !password.trim()) {
       setError('Please enter both email and password.');
@@ -23,16 +27,17 @@ export default function Login() {
     setIsSubmitting(true);
 
     try {
-      const response = await api.post('/auth/login', {
+      const response = await api.post<{ success: boolean; data: AuthResponse }>('/auth/login', {
         email: email.toLowerCase().trim(),
         password,
       });
 
       login(response.data.data);
       navigate('/dashboard');
-    } catch (submitError) {
+    } catch (submitError: unknown) {
       console.error('Login error:', submitError);
-      setError('Login failed. Please check your credentials and try again.');
+      const parsed = parseError(submitError);
+      setError(parsed._global ?? 'Login failed. Please check your credentials and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -54,9 +59,12 @@ export default function Login() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              aria-invalid={Boolean(fieldErrors.email)}
+              aria-describedby={fieldErrors.email ? 'login-email-error' : undefined}
               placeholder="you@company.com"
               required
             />
+            {fieldErrors.email && <span id="login-email-error" className="text-label-sm text-error">{fieldErrors.email}</span>}
           </label>
           <label>
             Password
@@ -64,9 +72,12 @@ export default function Login() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              aria-invalid={Boolean(fieldErrors.password)}
+              aria-describedby={fieldErrors.password ? 'login-password-error' : undefined}
               placeholder="••••••••"
               required
             />
+            {fieldErrors.password && <span id="login-password-error" className="text-label-sm text-error">{fieldErrors.password}</span>}
           </label>
           {error && (
             <div className="p-3 bg-error-container text-on-error-container text-body-md rounded-lg">

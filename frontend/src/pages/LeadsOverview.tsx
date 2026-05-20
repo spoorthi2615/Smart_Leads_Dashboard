@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api, { downloadCsv } from '../services/api';
 import { useDebounce } from '../hooks/useDebounce';
+import { useAuth } from '../context/AuthContext';
 import StatusBadge from '../components/StatusBadge';
 import SourceBadge from '../components/SourceBadge';
 import type { Lead, LeadSource, LeadStatus, PaginationData } from '../types';
@@ -17,17 +18,21 @@ interface LeadResponse {
 
 export default function LeadsOverview() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
   const [leads, setLeads] = useState<Lead[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | ''>('');
   const [sourceFilter, setSourceFilter] = useState<LeadSource | ''>('');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [pagination, setPagination] = useState<PaginationData>({
     page: 1,
-    limit: 25,
+    limit: 10,
     totalDocs: 0,
     totalPages: 1,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
@@ -41,6 +46,7 @@ export default function LeadsOverview() {
       const params = new URLSearchParams();
       params.append('page', String(pagination.page));
       params.append('limit', String(pagination.limit));
+      params.append('sort', sortOrder);
 
       if (statusFilter) params.append('status', statusFilter);
       if (sourceFilter) params.append('source', sourceFilter);
@@ -54,9 +60,10 @@ export default function LeadsOverview() {
     } finally {
       setIsLoading(false);
     }
-  }, [debouncedSearch, pagination.limit, pagination.page, sourceFilter, statusFilter]);
+  }, [debouncedSearch, pagination.limit, pagination.page, sourceFilter, statusFilter, sortOrder]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchLeads();
   }, [fetchLeads]);
 
@@ -87,6 +94,32 @@ export default function LeadsOverview() {
       void fetchLeads();
     } catch {
       /* ignore */
+    }
+  };
+
+  const buildFilterParams = useCallback(() => {
+    const params = new URLSearchParams();
+    params.append('sort', sortOrder);
+
+    if (statusFilter) params.append('status', statusFilter);
+    if (sourceFilter) params.append('source', sourceFilter);
+    if (debouncedSearch.trim()) params.append('search', debouncedSearch.trim());
+
+    return params;
+  }, [debouncedSearch, sourceFilter, statusFilter, sortOrder]);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    setError(null);
+
+    try {
+      const params = buildFilterParams();
+      const fileDate = new Date().toISOString().slice(0, 10);
+      await downloadCsv(`/leads/export?${params.toString()}`, `smart-leads-${fileDate}.csv`);
+    } catch {
+      setError('Unable to export leads at this time.');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -166,6 +199,19 @@ export default function LeadsOverview() {
               </select>
             </div>
 
+            {/* Sort Order */}
+            <div className="flex items-center gap-2">
+              <span className="text-label-md text-on-surface-variant">Sort:</span>
+              <select
+                value={sortOrder}
+                onChange={(e) => { setSortOrder(e.target.value as 'asc' | 'desc'); setPagination(p => ({ ...p, page: 1 })); }}
+                className="bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-1.5 text-label-md focus:ring-primary focus:border-primary"
+              >
+                <option value="desc">Latest First</option>
+                <option value="asc">Oldest First</option>
+              </select>
+            </div>
+
             {/* Search */}
             <div className="flex items-center gap-2 flex-1 min-w-[200px]">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-container-low rounded-lg border border-outline-variant/30 w-full max-w-xs">
@@ -182,6 +228,15 @@ export default function LeadsOverview() {
           </div>
 
           <div className="flex items-center gap-2 w-full xl:w-auto justify-end">
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={isExporting}
+              className="hidden sm:flex px-4 py-1.5 bg-surface-container-lowest border border-primary text-primary rounded-lg text-label-md font-medium hover:bg-surface-container-low transition-all items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="material-symbols-outlined text-[18px]">{isExporting ? 'progress_activity' : 'file_download'}</span>
+              {isExporting ? 'Exporting...' : 'Export CSV'}
+            </button>
             <span className="text-label-md text-on-surface-variant italic whitespace-nowrap">{leadCountLabel}</span>
           </div>
         </div>
@@ -212,6 +267,7 @@ export default function LeadsOverview() {
                 <tr className="bg-surface-container-low/50 border-b border-outline-variant">
                   <th className="p-4 w-12">
                     <input
+                      aria-label="Select all visible leads"
                       type="checkbox"
                       checked={selectedRows.size === leads.length && leads.length > 0}
                       onChange={toggleSelectAll}
@@ -236,6 +292,7 @@ export default function LeadsOverview() {
                   >
                     <td className="p-4" onClick={(e) => e.stopPropagation()}>
                       <input
+                        aria-label={`Select ${lead.name}`}
                         type="checkbox"
                         checked={selectedRows.has(lead.id)}
                         onChange={() => toggleRow(lead.id)}
@@ -265,15 +322,19 @@ export default function LeadsOverview() {
                         <button
                           onClick={() => navigate(`/leads/${lead.id}`)}
                           className="p-1 text-on-surface-variant hover:text-primary transition-all"
+                          title="View / Edit"
                         >
                           <span className="material-symbols-outlined text-[18px]">edit</span>
                         </button>
-                        <button
-                          onClick={() => handleDelete(lead.id)}
-                          className="p-1 text-on-surface-variant hover:text-error transition-all"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">delete</span>
-                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleDelete(lead.id)}
+                            className="p-1 text-on-surface-variant hover:text-error transition-all"
+                            title="Delete lead"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

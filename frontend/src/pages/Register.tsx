@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useValidationError } from '../hooks/useValidationError';
+import type { AuthResponse } from '../types';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -11,11 +13,13 @@ export default function Register() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
+  const { fieldErrors, parseError, clearErrors } = useValidationError();
   const navigate = useNavigate();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    clearErrors();
 
     if (!name.trim() || !email.trim() || !password.trim()) {
       setError('Name, email and password are required.');
@@ -25,7 +29,7 @@ export default function Register() {
     setIsSubmitting(true);
 
     try {
-      const response = await api.post('/auth/register', {
+      const response = await api.post<{ success: boolean; data: AuthResponse }>('/auth/register', {
         name: name.trim(),
         email: email.toLowerCase().trim(),
         password,
@@ -34,9 +38,10 @@ export default function Register() {
 
       login(response.data.data);
       navigate('/dashboard');
-    } catch (submitError) {
+    } catch (submitError: unknown) {
       console.error('Register error:', submitError);
-      setError('Registration failed. Please review your data and try again.');
+      const parsed = parseError(submitError);
+      setError(parsed._global ?? 'Registration failed. Please review your data and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -58,9 +63,12 @@ export default function Register() {
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
+              aria-invalid={Boolean(fieldErrors.name)}
+              aria-describedby={fieldErrors.name ? 'register-name-error' : undefined}
               placeholder="John Doe"
               required
             />
+            {fieldErrors.name && <span id="register-name-error" className="text-label-sm text-error">{fieldErrors.name}</span>}
           </label>
           <label>
             Email
@@ -68,9 +76,12 @@ export default function Register() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              aria-invalid={Boolean(fieldErrors.email)}
+              aria-describedby={fieldErrors.email ? 'register-email-error' : undefined}
               placeholder="you@company.com"
               required
             />
+            {fieldErrors.email && <span id="register-email-error" className="text-label-sm text-error">{fieldErrors.email}</span>}
           </label>
           <label>
             Password
@@ -78,9 +89,12 @@ export default function Register() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              aria-invalid={Boolean(fieldErrors.password)}
+              aria-describedby={fieldErrors.password ? 'register-password-error' : undefined}
               placeholder="••••••••"
               required
             />
+            {fieldErrors.password && <span id="register-password-error" className="text-label-sm text-error">{fieldErrors.password}</span>}
           </label>
           <label>
             Role

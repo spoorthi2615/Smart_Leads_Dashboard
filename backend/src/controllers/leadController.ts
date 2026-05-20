@@ -1,7 +1,10 @@
 import type { Request, Response } from 'express';
+import { Readable } from 'stream';
+import { Transform as Json2CsvTransform } from 'json2csv';
 import { Types } from 'mongoose';
 import { Lead } from '../models/Lead.js';
 import type { ILead, LeadSource, LeadStatus } from '../models/Lead.js';
+import type { LeadCreateDTO, LeadUpdateDTO, LeadQueryDTO, LeadIdParams } from '../validation/schemas.js';
 
 type PopulatedAuthor = {
   _id: unknown;
@@ -38,6 +41,17 @@ interface PaginationResponse {
   };
 }
 
+interface LeadExportRow {
+  name: string;
+  email: string;
+  status: LeadStatus;
+  source: LeadSource;
+  createdByName: string;
+  createdByEmail: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 function serializeLead(lead: PopulatedLead) {
   return {
     id: lead._id.toString(),
@@ -56,23 +70,38 @@ function serializeLead(lead: PopulatedLead) {
   };
 }
 
+function buildLeadQuery({ status, source, search }: Pick<LeadQueryDTO, 'status' | 'source' | 'search'>): Record<string, unknown> {
+  const query: Record<string, unknown> = {};
+  const searchTerm = search?.trim();
+
+  if (status) {
+    query.status = status;
+  }
+
+  if (source) {
+    query.source = source;
+  }
+
+  if (searchTerm) {
+    query.$or = [
+      { name: { $regex: searchTerm, $options: 'i' } },
+      { email: { $regex: searchTerm, $options: 'i' } },
+    ];
+  }
+
+  return query;
+}
+
 export async function createLead(req: Request, res: Response): Promise<void> {
   if (!req.user) {
     res.status(401).json({ success: false, message: 'Authentication required' });
     return;
   }
 
-  const { name, email, status, source } = req.body as {
-    name?: string;
-    email?: string;
-    status?: LeadStatus;
-    source?: LeadSource;
-  };
+  const { name, email, status, source } = req.validatedBody as LeadCreateDTO;
 
-  if (!name || !email || !status || !source) {
-    res.status(400).json({ success: false, message: 'All lead fields are required' });
-    return;
-  }
+  // No additional field presence checks needed; schema validation ensures required fields.
+
 
   const createdLead = await Lead.create({
     name: name.trim(),
@@ -93,34 +122,16 @@ export async function createLead(req: Request, res: Response): Promise<void> {
 }
 
 export async function getLeads(req: Request, res: Response): Promise<void> {
-  const page = Number(req.query.page ?? 1);
-  const limit = Number(req.query.limit ?? 10);
-  const requestedStatus = typeof req.query.status === 'string' ? (req.query.status as LeadStatus) : undefined;
-  const requestedSource = typeof req.query.source === 'string' ? (req.query.source as LeadSource) : undefined;
-  const searchTerm = typeof req.query.search === 'string' ? req.query.search.trim() : undefined;
+  const { page, limit, sort, status, source, search } = req.validatedQuery as LeadQueryDTO;
+  const sortOrder = sort === 'asc' ? 1 : -1;
 
-  const query: Record<string, unknown> = {};
-
-  if (requestedStatus) {
-    query.status = requestedStatus;
-  }
-
-  if (requestedSource) {
-    query.source = requestedSource;
-  }
-
-  if (searchTerm) {
-    query.$or = [
-      { name: { $regex: searchTerm, $options: 'i' } },
-      { email: { $regex: searchTerm, $options: 'i' } },
-    ];
-  }
+  const query = buildLeadQuery({ status, source, search });
 
   const skip = Math.max(page - 1, 0) * limit;
 
   const [totalDocs, leads] = await Promise.all([
     Lead.countDocuments(query),
-    Lead.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).populate('createdBy', 'name email role'),
+    Lead.find(query).sort({ createdAt: sortOrder }).skip(skip).limit(limit).populate('createdBy', 'name email role'),
   ]);
 
   const totalPages = Math.max(Math.ceil(totalDocs / limit), 1);
@@ -138,13 +149,56 @@ export async function getLeads(req: Request, res: Response): Promise<void> {
   res.status(200).json({ success: true, ...response });
 }
 
-export async function getLeadById(req: Request, res: Response): Promise<void> {
-  const id = String(req.params.id);
+export async function exportLeads(req: Request, res: Response): Promise<void> {
+  const { sort, status, source, search } = req.validatedQuery as LeadQueryDTO;
+  const sortOrder = sort === 'asc' ? 1 : -1;
+  const query = buildLeadQuery({ status, source, search });
 
-  if (!Types.ObjectId.isValid(id)) {
-    res.status(400).json({ success: false, message: 'Invalid lead ID' });
-    return;
+  const fields = [
+    { label: 'Name', value: 'name' },
+    { label: 'Email', value: 'email' },
+    { label: 'Status', value: 'status' },
+    { label: 'Source', value: 'source' },
+    { label: 'Created By', value: 'createdByName' },
+    { label: 'Created By Email', value: 'createdByEmail' },
+    { label: 'Created At', value: 'createdAt' },
+    { label: 'Updated At', value: 'updatedAt' },
+  ];
+
+  async function* rows(): AsyncGenerator<LeadExportRow> {
+    const cursor = Lead.find(query)
+      .sort({ createdAt: sortOrder })
+      .populate('createdBy', 'name email role')
+      .cursor();
+
+    for await (const lead of cursor) {
+      const serializedLead = serializeLead(lead as unknown as PopulatedLead);
+      yield {
+        name: serializedLead.name,
+        email: serializedLead.email,
+        status: serializedLead.status,
+        source: serializedLead.source,
+        createdByName: serializedLead.createdBy.name,
+        createdByEmail: serializedLead.createdBy.email,
+        createdAt: serializedLead.createdAt.toISOString(),
+        updatedAt: serializedLead.updatedAt.toISOString(),
+      };
+    }
   }
+
+  const fileDate = new Date().toISOString().slice(0, 10);
+  res.status(200);
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="smart-leads-${fileDate}.csv"`);
+
+  const csvTransform = new Json2CsvTransform<LeadExportRow>({ fields }, { objectMode: true });
+
+  Readable.from(rows()).pipe(csvTransform).pipe(res);
+}
+
+export async function getLeadById(req: Request, res: Response): Promise<void> {
+  const { id } = req.validatedParams as LeadIdParams;
+
 
   const lead = await Lead.findById(id).populate('createdBy', 'name email role');
 
@@ -164,23 +218,16 @@ type LeadUpdates = Partial<{
 }>;
 
 export async function updateLead(req: Request, res: Response): Promise<void> {
-  const id = String(req.params.id);
+  const { id } = req.validatedParams as LeadIdParams;
 
-  if (!Types.ObjectId.isValid(id)) {
-    res.status(400).json({ success: false, message: 'Invalid lead ID' });
-    return;
-  }
+  const updates = req.validatedBody as LeadUpdateDTO;
+  // Only include provided fields; Zod already filters undefined
+  const payload: LeadUpdates = {};
+  if (updates.name !== undefined) payload.name = updates.name;
+  if (updates.email !== undefined) payload.email = updates.email;
+  if (updates.status !== undefined) payload.status = updates.status;
+  if (updates.source !== undefined) payload.source = updates.source;
 
-  const updates = req.body as LeadUpdates;
-  const allowedUpdates = ['name', 'email', 'status', 'source'] as const;
-  const payload: Record<string, string> = {};
-
-  for (const field of allowedUpdates) {
-    const value = updates[field];
-    if (typeof value === 'string' && value.trim()) {
-      payload[field] = value.trim();
-    }
-  }
 
   const lead = await Lead.findByIdAndUpdate(id, payload as Record<string, unknown>, {
     new: true,
@@ -196,12 +243,7 @@ export async function updateLead(req: Request, res: Response): Promise<void> {
 }
 
 export async function deleteLead(req: Request, res: Response): Promise<void> {
-  const id = String(req.params.id);
-
-  if (!Types.ObjectId.isValid(id)) {
-    res.status(400).json({ success: false, message: 'Invalid lead ID' });
-    return;
-  }
+  const { id } = req.validatedParams as LeadIdParams;
 
   const lead = await Lead.findByIdAndDelete(id);
 

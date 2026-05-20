@@ -1,16 +1,11 @@
 import mongoose from 'mongoose';
+import { env } from './env.js';
 
 export async function connectDB(): Promise<void> {
-  const envMongoUri = process.env.MONGO_URI;
-  const mongoUri = envMongoUri ?? 'mongodb://127.0.0.1:27017/smart_leads';
-
-  console.log(`[Backend] MONGO_URI ${envMongoUri ? 'loaded from env' : 'not found in env'}`);
-  if (!envMongoUri) {
-    console.warn('MONGO_URI not provided. Falling back to local MongoDB at mongodb://127.0.0.1:27017/smart_leads');
-  }
+  console.log('[Backend] MONGO_URI loaded from validated env');
 
   try {
-    await mongoose.connect(mongoUri, {
+    await mongoose.connect(env.MONGO_URI, {
       dbName: 'smart_leads',
     });
     console.log('MongoDB connected');

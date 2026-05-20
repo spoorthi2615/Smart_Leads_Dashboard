@@ -1,30 +1,19 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import StatusBadge from '../components/StatusBadge';
-import type { Lead, LeadActivity, LeadNote } from '../types';
+import type { Lead, LeadActivity, LeadNote, LeadStatus } from '../types';
+import { useValidationError } from '../hooks/useValidationError';
 
-// Mock data for fields not yet in the API
-const mockDetails: Record<string, { phone: string; company: string; location: string; healthScore: number }> = {};
-function getMockDetails(id: string) {
-  if (!mockDetails[id]) {
-    mockDetails[id] = {
-      phone: '+1 (555) 924-1102',
-      company: 'Enterprise Solutions Group',
-      location: 'San Francisco, CA',
-      healthScore: Math.floor(Math.random() * 30) + 70,
-    };
-  }
-  return mockDetails[id];
-}
-
+// Mock activity data (activity log is a future backend feature)
 const mockActivities: LeadActivity[] = [
   {
     id: '1',
     type: 'status_change',
-    title: 'Updated Lead Status',
-    description: 'Lead moved from Prospect to Qualified by Michael Ross.',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    title: 'Lead Created',
+    description: 'Lead was added to the system.',
+    timestamp: new Date().toISOString(),
   },
   {
     id: '2',
@@ -33,52 +22,66 @@ const mockActivities: LeadActivity[] = [
     description: 'Subject: "Follow up on Enterprise Q4 Strategy". Opened 3 times.',
     timestamp: new Date(Date.now() - 86400000).toISOString(),
   },
-  {
-    id: '3',
-    type: 'lead_imported',
-    title: 'Lead Imported',
-    description: 'Source: Instagram Ad Campaign #12 (Enterprise Mobility).',
-    timestamp: '2023-10-12T10:00:00Z',
-  },
 ];
 
 const mockNotes: LeadNote[] = [
   {
     id: '1',
-    content: '"Prefers afternoon calls. Heavily interested in the API integration features for their CRM."',
+    content: '"Prefers afternoon calls. Interested in the API integration features."',
     author: 'Admin User',
     createdAt: new Date(Date.now() - 172800000).toISOString(),
   },
 ];
 
+const statusOptions: LeadStatus[] = ['New', 'Contacted', 'Qualified', 'Lost'];
+
 export default function LeadDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
+
   const [lead, setLead] = useState<Lead | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Edit modal state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editStatus, setEditStatus] = useState<LeadStatus>('New');
+  const [editSource, setEditSource] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const { fieldErrors, parseError, clearErrors } = useValidationError();
+
+  // Delete confirm state
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const scoreRef = useRef<HTMLSpanElement>(null);
 
-  useEffect(() => {
-    const fetchLead = async () => {
-      setIsLoading(true);
-      try {
-        const res = await api.get<{ success: boolean; data: Lead }>(`/leads/${id}`);
-        setLead(res.data.data);
-      } catch {
-        setError('Failed to load lead details.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    void fetchLead();
+  const fetchLead = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.get<{ success: boolean; data: Lead }>(`/leads/${id}`);
+      setLead(res.data.data);
+    } catch {
+      setError('Failed to load lead details.');
+    } finally {
+      setIsLoading(false);
+    }
   }, [id]);
 
-  // Animate health score
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchLead();
+  }, [fetchLead]);
+
+  // Animate health score (derived from lead data)
   useEffect(() => {
     if (!lead || !scoreRef.current) return;
-    const details = getMockDetails(lead.id);
-    const target = details.healthScore;
+    const target = lead.status === 'Qualified' ? 92 : lead.status === 'Contacted' ? 74 : lead.status === 'New' ? 55 : 30;
     let current = 0;
     const step = target / (1500 / 16);
     const animate = () => {
@@ -92,6 +95,58 @@ export default function LeadDetails() {
     };
     animate();
   }, [lead]);
+
+  const openEdit = () => {
+    if (!lead) return;
+    setEditName(lead.name);
+    setEditEmail(lead.email);
+    setEditStatus(lead.status);
+    setEditSource(lead.source);
+    setEditError(null);
+    clearErrors();
+    setIsEditing(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!lead) return;
+    setIsSaving(true);
+    setEditError(null);
+    clearErrors();
+    try {
+      await api.put(`/leads/${lead.id}`, {
+        name: editName,
+        email: editEmail,
+        status: editStatus,
+        source: editSource,
+      });
+      setIsEditing(false);
+      void fetchLead();
+    } catch (err: unknown) {
+      const parsed = parseError(err);
+      if (parsed._global) {
+        setEditError(parsed._global);
+      } else if (Object.keys(parsed).length > 0) {
+        setEditError('Please fix the validation errors below.');
+      } else {
+        setEditError('Failed to update lead. Please try again.');
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!lead) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/leads/${lead.id}`);
+      navigate('/leads');
+    } catch {
+      setShowDeleteConfirm(false);
+      setIsDeleting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -111,25 +166,21 @@ export default function LeadDetails() {
     );
   }
 
-  const details = getMockDetails(lead.id);
-  const scoreLabel = details.healthScore >= 80 ? 'EXCELLENT' : details.healthScore >= 60 ? 'GOOD' : 'FAIR';
+  const healthScore = lead.status === 'Qualified' ? 92 : lead.status === 'Contacted' ? 74 : lead.status === 'New' ? 55 : 30;
+  const scoreLabel = healthScore >= 80 ? 'EXCELLENT' : healthScore >= 60 ? 'GOOD' : 'FAIR';
 
   const formatTime = (ts: string) => {
     const d = new Date(ts);
-    const now = new Date();
-    const diff = now.getTime() - d.getTime();
-    if (diff < 86400000) {
-      return `Today, ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
-    }
-    if (diff < 172800000) {
-      return `Yesterday, ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
-    }
+    // eslint-disable-next-line react-hooks/purity
+    const diff = Date.now() - d.getTime();
+    if (diff < 86400000) return `Today, ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+    if (diff < 172800000) return `Yesterday, ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
     return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
   };
 
   const relativeTime = (ts: string) => {
-    const diff = Date.now() - new Date(ts).getTime();
-    const days = Math.floor(diff / 86400000);
+    // eslint-disable-next-line react-hooks/purity
+    const days = Math.floor((Date.now() - new Date(ts).getTime()) / 86400000);
     if (days === 0) return 'Today';
     if (days === 1) return '1 day ago';
     return `${days} days ago`;
@@ -137,6 +188,104 @@ export default function LeadDetails() {
 
   return (
     <div>
+      {/* Edit Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={() => setIsEditing(false)} />
+          <div className="relative w-full max-w-md bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg p-6 z-10">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-headline-sm font-semibold">Edit Lead</h2>
+              <button onClick={() => setIsEditing(false)} className="p-1 hover:bg-surface-container rounded-lg">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            {editError && (
+              <div className="mb-4 p-3 bg-error-container text-on-error-container text-body-md rounded-lg">{editError}</div>
+            )}
+            <form onSubmit={handleSave} className="space-y-4">
+              <div>
+                <label className="block text-label-md text-on-surface-variant mb-1">Full Name</label>
+                <input
+                  type="text" required value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className={`w-full px-4 py-2.5 bg-surface-container-lowest border ${fieldErrors.name ? 'border-error ring-1 ring-error/20' : 'border-outline-variant'} rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all`}
+                />
+                {fieldErrors.name && <p className="mt-1 text-label-sm text-error">{fieldErrors.name}</p>}
+              </div>
+              <div>
+                <label className="block text-label-md text-on-surface-variant mb-1">Email Address</label>
+                <input
+                  type="email" required value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  className={`w-full px-4 py-2.5 bg-surface-container-lowest border ${fieldErrors.email ? 'border-error ring-1 ring-error/20' : 'border-outline-variant'} rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all`}
+                />
+                {fieldErrors.email && <p className="mt-1 text-label-sm text-error">{fieldErrors.email}</p>}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-label-md text-on-surface-variant mb-1">Status</label>
+                  <select
+                    value={editStatus} onChange={(e) => setEditStatus(e.target.value as LeadStatus)}
+                    className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  >
+                    {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-label-md text-on-surface-variant mb-1">Source</label>
+                  <select
+                    value={editSource} onChange={(e) => setEditSource(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  >
+                    <option value="Website">Website</option>
+                    <option value="Instagram">Instagram</option>
+                    <option value="Referral">Referral</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setIsEditing(false)}
+                  className="flex-1 px-4 py-2.5 border border-outline-variant text-on-surface-variant rounded-lg text-label-md font-medium hover:bg-surface-container-low transition-all"
+                >
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSaving}
+                  className="flex-1 px-4 py-2.5 bg-primary text-on-primary rounded-lg text-label-md font-medium hover:bg-primary/90 transition-all disabled:opacity-50"
+                >
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirm Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
+          <div className="relative w-full max-w-sm bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg p-6 z-10 text-center">
+            <span className="material-symbols-outlined text-[48px] text-error mb-4 block">delete_forever</span>
+            <h2 className="text-headline-sm font-semibold mb-2">Delete Lead?</h2>
+            <p className="text-body-md text-on-surface-variant mb-6">
+              This will permanently delete <strong>{lead.name}</strong>. This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2.5 border border-outline-variant text-on-surface-variant rounded-lg text-label-md font-medium hover:bg-surface-container-low"
+              >
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={isDeleting}
+                className="flex-1 px-4 py-2.5 bg-error text-on-error rounded-lg text-label-md font-medium hover:bg-error/90 disabled:opacity-50"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Back Button */}
       <button
         onClick={() => navigate('/leads')}
@@ -151,15 +300,13 @@ export default function LeadDetails() {
         <div className="flex items-start gap-6">
           <div className="w-20 h-20 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center overflow-hidden">
             <div className="w-full h-full bg-primary/20 flex items-center justify-center text-primary text-headline-md font-bold">
-              {lead.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              {lead.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
             </div>
           </div>
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h2 className="text-headline-lg">{lead.name}</h2>
-              <span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                verified
-              </span>
+              <span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <StatusBadge status={lead.status} />
@@ -167,18 +314,29 @@ export default function LeadDetails() {
                 <span className="material-symbols-outlined text-[14px]">public</span>
                 {lead.source}
               </div>
-              <span className="text-on-surface-variant text-label-sm">• Last active 2 hours ago</span>
+              <span className="text-on-surface-variant text-label-sm">
+                • Created {new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
+              </span>
             </div>
           </div>
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl text-label-md font-medium hover:bg-primary/90 transition-all shadow-soft">
-            <span className="material-symbols-outlined text-[18px]">near_me</span>
-            Message
+          <button
+            onClick={openEdit}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl text-label-md font-medium hover:bg-primary/90 transition-all shadow-soft"
+          >
+            <span className="material-symbols-outlined text-[18px]">edit</span>
+            Edit Lead
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 border border-outline-variant bg-surface-container-lowest text-on-surface rounded-xl text-label-md hover:bg-surface-container-low transition-all">
-            <span className="material-symbols-outlined text-[18px]">more_horiz</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex items-center gap-2 px-4 py-2 border border-error/50 text-error bg-transparent rounded-xl text-label-md hover:bg-error/10 transition-all"
+            >
+              <span className="material-symbols-outlined text-[18px]">delete</span>
+              Delete
+            </button>
+          )}
         </div>
       </div>
 
@@ -186,7 +344,7 @@ export default function LeadDetails() {
       <div className="grid grid-cols-12 gap-5">
         {/* Left Column */}
         <div className="col-span-12 lg:col-span-8 space-y-5">
-          {/* Personal Info Card */}
+          {/* Lead Info Card */}
           <div className="glass-card rounded-xl p-6">
             <h3 className="text-headline-sm mb-6">Lead Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -202,31 +360,33 @@ export default function LeadDetails() {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
-                    <span className="material-symbols-outlined">call</span>
+                    <span className="material-symbols-outlined">person</span>
                   </div>
                   <div>
-                    <p className="text-label-sm text-on-surface-variant uppercase tracking-wider">Phone Number</p>
-                    <p className="text-body-md font-semibold">{details.phone}</p>
+                    <p className="text-label-sm text-on-surface-variant uppercase tracking-wider">Added By</p>
+                    <p className="text-body-md font-semibold">{lead.createdBy.name}</p>
                   </div>
                 </div>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
-                    <span className="material-symbols-outlined">location_on</span>
+                    <span className="material-symbols-outlined">public</span>
                   </div>
                   <div>
-                    <p className="text-label-sm text-on-surface-variant uppercase tracking-wider">Location</p>
-                    <p className="text-body-md font-semibold">{details.location}</p>
+                    <p className="text-label-sm text-on-surface-variant uppercase tracking-wider">Source Channel</p>
+                    <p className="text-body-md font-semibold">{lead.source}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
-                    <span className="material-symbols-outlined">business</span>
+                    <span className="material-symbols-outlined">schedule</span>
                   </div>
                   <div>
-                    <p className="text-label-sm text-on-surface-variant uppercase tracking-wider">Company</p>
-                    <p className="text-body-md font-semibold">{details.company}</p>
+                    <p className="text-label-sm text-on-surface-variant uppercase tracking-wider">Last Updated</p>
+                    <p className="text-body-md font-semibold">
+                      {new Date(lead.updatedAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -237,10 +397,6 @@ export default function LeadDetails() {
           <div className="glass-card rounded-xl p-6">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-headline-sm">Activity Timeline</h3>
-              <button className="text-primary text-label-md flex items-center gap-1 hover:underline">
-                Filter History
-                <span className="material-symbols-outlined text-[16px]">filter_list</span>
-              </button>
             </div>
             <div className="space-y-6 relative timeline-line">
               {mockActivities.map((activity, i) => (
@@ -252,11 +408,6 @@ export default function LeadDetails() {
                       <span className="text-label-md text-on-surface-variant">{formatTime(activity.timestamp)}</span>
                     </div>
                     <p className="text-body-md text-on-surface-variant">{activity.description}</p>
-                    {activity.type === 'email_sent' && (
-                      <button className="mt-2 px-2 py-1 border border-outline-variant rounded bg-surface-container-lowest text-label-sm hover:bg-surface-container-low">
-                        View Email
-                      </button>
-                    )}
                   </div>
                 </div>
               ))}
@@ -266,7 +417,7 @@ export default function LeadDetails() {
 
         {/* Right Column */}
         <div className="col-span-12 lg:col-span-4 space-y-5">
-          {/* Health Score Widget */}
+          {/* Health Score */}
           <div className="glass-card rounded-xl p-6 bg-primary-container text-on-primary-container relative overflow-hidden">
             <div className="relative z-10">
               <h4 className="text-label-md uppercase tracking-wider opacity-80 mb-2">Lead Health Score</h4>
@@ -275,11 +426,10 @@ export default function LeadDetails() {
                 <span className="text-label-md mb-2 font-bold bg-on-primary-container/20 px-2 py-1 rounded">{scoreLabel}</span>
               </div>
               <p className="text-body-md mt-4 opacity-90">
-                High engagement across social channels and email opens suggests readiness for closing.
+                Based on current pipeline status: <strong>{lead.status}</strong>.
               </p>
             </div>
             <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-on-primary-container opacity-10 rounded-full blur-3xl" />
-            <div className="absolute right-0 top-0 w-24 h-24 bg-on-primary-container opacity-5 rotate-45 transform translate-x-1/2 -translate-y-1/2" />
           </div>
 
           {/* Private Notes */}
@@ -308,28 +458,22 @@ export default function LeadDetails() {
 
           {/* Pipeline Actions */}
           <div className="glass-card rounded-xl p-6">
-            <h3 className="text-headline-sm mb-6">Pipeline Actions</h3>
+            <h3 className="text-headline-sm mb-6">Quick Actions</h3>
             <div className="space-y-2">
-              {[
-                { icon: 'mail', label: 'Send Email Template' },
-                { icon: 'low_priority', label: 'Move to Pipeline' },
-                { icon: 'person_add', label: 'Assign Owner' },
-              ].map((action) => (
+              {statusOptions.map((s) => (
                 <button
-                  key={action.label}
-                  className="w-full flex items-center justify-between px-4 py-2 bg-surface-container-low hover:bg-surface-container-high rounded-xl group transition-all"
+                  key={s}
+                  onClick={() => { setEditStatus(s); openEdit(); }}
+                  disabled={lead.status === s}
+                  className={`w-full flex items-center justify-between px-4 py-2 rounded-xl group transition-all text-label-md ${lead.status === s ? 'bg-primary/10 text-primary font-semibold' : 'bg-surface-container-low hover:bg-surface-container-high'}`}
                 >
-                  <div className="flex items-center gap-4">
-                    <span className="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">{action.icon}</span>
-                    <span className="text-label-md">{action.label}</span>
-                  </div>
-                  <span className="material-symbols-outlined text-on-surface-variant text-[18px]">chevron_right</span>
+                  <span>Move to {s}</span>
+                  {lead.status === s
+                    ? <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                    : <span className="material-symbols-outlined text-on-surface-variant text-[18px]">chevron_right</span>
+                  }
                 </button>
               ))}
-              <button className="w-full mt-6 flex items-center justify-center gap-2 px-4 py-2 text-error hover:bg-error-container/20 rounded-xl transition-all text-label-md">
-                <span className="material-symbols-outlined text-[20px]">delete_outline</span>
-                Archive Lead
-              </button>
             </div>
           </div>
         </div>

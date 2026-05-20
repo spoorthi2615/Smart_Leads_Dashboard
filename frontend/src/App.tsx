@@ -58,6 +58,20 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <div className="flex flex-col items-center justify-center min-h-[400px] text-on-surface-variant">
+                <span className="material-symbols-outlined text-[48px] mb-4 opacity-30">assessment</span>
+                <h2 className="text-headline-sm mb-2">Reports</h2>
+                <p className="text-body-md">Coming soon.</p>
+              </div>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* Placeholder routes for sidebar items */}
       <Route

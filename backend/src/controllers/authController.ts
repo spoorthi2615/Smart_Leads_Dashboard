@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { User, type IUser, type UserRole } from '../models/User.js';
+import type { RegisterDTO, LoginDTO } from '../validation/schemas.js';
+import { env } from '../config/env.js';
 
 interface AuthPayload {
   id: string;
@@ -17,28 +19,28 @@ interface AuthResponse {
   };
 }
 
+/**
+ * Creates a JWT token with the given payload
+ * WHY: Centralized token creation with validated secret from env
+ * - Uses validated JWT_SECRET from environment config
+ * - Sets consistent expiration (2 hours)
+ * - Fails fast if secret is not configured
+ */
 function createToken(payload: AuthPayload): string {
-  const secret = process.env.JWT_SECRET;
+  const secret = env.JWT_SECRET;
 
   if (!secret) {
     throw new Error('JWT_SECRET is not configured');
   }
 
-  return jwt.sign(payload, secret, { expiresIn: '2h' });
+  return jwt.sign(payload, secret, {
+    expiresIn: '2h',
+    algorithm: 'HS256',
+  });
 }
 
 export async function register(req: Request, res: Response): Promise<void> {
-  const { name, email, password, role } = req.body as {
-    name?: string;
-    email?: string;
-    password?: string;
-    role?: UserRole;
-  };
-
-  if (!name || !email || !password) {
-    res.status(400).json({ success: false, message: 'Name, email and password are required' });
-    return;
-  }
+  const { name, email, password, role } = req.validatedBody as RegisterDTO;
 
   const normalizedEmail = email.toLowerCase();
   const existingUser = await User.findOne({ email: normalizedEmail });
@@ -71,15 +73,7 @@ export async function register(req: Request, res: Response): Promise<void> {
 }
 
 export async function login(req: Request, res: Response): Promise<void> {
-  const { email, password } = req.body as {
-    email?: string;
-    password?: string;
-  };
-
-  if (!email || !password) {
-    res.status(400).json({ success: false, message: 'Email and password are required' });
-    return;
-  }
+  const { email, password } = req.validatedBody as LoginDTO;
 
   const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
 
