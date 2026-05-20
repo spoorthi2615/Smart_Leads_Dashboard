@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
-import type { Lead, PaginatedResponse } from '../types';
-import { User, Mail, Calendar, Circle } from 'lucide-react';
+import type { Lead, PaginationData } from '../types';
+import { Mail, Calendar, Circle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const STATUSES = ['New', 'Contacted', 'Qualified', 'Lost'] as const;
@@ -19,8 +19,8 @@ export default function Pipeline() {
   const fetchLeads = async () => {
     try {
       setIsLoading(true);
-      const response = await api.get<{ success: boolean; data: PaginatedResponse<Lead> }>('/leads?limit=100');
-      setLeads(response.data.data.items);
+      const response = await api.get<{ success: boolean; data: Lead[]; meta: PaginationData }>('/leads?limit=100');
+      setLeads(response.data.data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch leads');
     } finally {
@@ -41,9 +41,9 @@ export default function Pipeline() {
   const updateLeadStatus = async (id: string, newStatus: string) => {
     try {
       // Optimistic update
-      setLeads(leads.map(lead => lead._id === id ? { ...lead, status: newStatus as any } : lead));
+      setLeads(leads.map(lead => lead.id === id ? { ...lead, status: newStatus as any } : lead));
       
-      const leadToUpdate = leads.find(l => l._id === id);
+      const leadToUpdate = leads.find(l => l.id === id);
       if (!leadToUpdate) return;
       
       await api.put(`/leads/${id}`, {
@@ -101,7 +101,7 @@ export default function Pipeline() {
                 <AnimatePresence>
                   {columnLeads.map(lead => (
                     <motion.div
-                      key={lead._id}
+                      key={lead.id}
                       layout
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -109,7 +109,7 @@ export default function Pipeline() {
                       transition={{ duration: 0.2 }}
                       className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-outline-variant dark:border-slate-700 shadow-soft hover:shadow-md transition-shadow group relative"
                     >
-                      <Link to={`/leads/${lead._id}`} className="block">
+                      <Link to={`/leads/${lead.id}`} className="block">
                         <h4 className="font-semibold text-on-surface dark:text-white mb-1 group-hover:text-primary dark:group-hover:text-primary-fixed-dim transition-colors">
                           {lead.name}
                         </h4>
@@ -135,7 +135,7 @@ export default function Pipeline() {
                         <select 
                           className="text-xs bg-surface-container-highest dark:bg-slate-700 border border-outline-variant dark:border-slate-600 rounded px-2 py-1 text-on-surface dark:text-white cursor-pointer outline-none focus:ring-1 focus:ring-primary"
                           value={lead.status}
-                          onChange={(e) => updateLeadStatus(lead._id, e.target.value)}
+                          onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
                         >
                           {STATUSES.map(s => (
                             <option key={s} value={s}>{s}</option>
