@@ -133,9 +133,8 @@ export default function LeadsOverview() {
               <div className="flex bg-surface-container-low p-1 rounded-lg border border-outline-variant/30">
                 <button
                   onClick={() => setStatusFilter('')}
-                  className={`px-2 py-1 rounded-md text-label-sm transition-all ${
-                    statusFilter === '' ? 'bg-surface-container-lowest text-primary shadow-soft font-semibold' : 'text-on-surface-variant hover:text-on-surface'
-                  }`}
+                  className={`px-2 py-1 rounded-md text-label-sm transition-all ${statusFilter === '' ? 'bg-surface-container-lowest text-primary shadow-soft font-semibold' : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
                 >
                   All
                 </button>
@@ -143,9 +142,8 @@ export default function LeadsOverview() {
                   <button
                     key={s}
                     onClick={() => setStatusFilter(statusFilter === s ? '' : s)}
-                    className={`px-2 py-1 rounded-md text-label-sm transition-all ${
-                      statusFilter === s ? 'bg-surface-container-lowest text-primary shadow-soft font-semibold' : 'text-on-surface-variant hover:text-on-surface'
-                    }`}
+                    className={`px-2 py-1 rounded-md text-label-sm transition-all ${statusFilter === s ? 'bg-surface-container-lowest text-primary shadow-soft font-semibold' : 'text-on-surface-variant hover:text-on-surface'
+                      }`}
                   >
                     {s}
                   </button>
@@ -232,9 +230,8 @@ export default function LeadsOverview() {
                 {leads.map((lead, index) => (
                   <tr
                     key={lead.id}
-                    className={`hover:bg-surface-container-low transition-colors group cursor-pointer ${
-                      selectedRows.has(lead.id) ? 'bg-primary/5' : ''
-                    }`}
+                    className={`hover:bg-surface-container-low transition-colors group cursor-pointer ${selectedRows.has(lead.id) ? 'bg-primary/5' : ''
+                      }`}
                     onClick={() => navigate(`/leads/${lead.id}`)}
                   >
                     <td className="p-4" onClick={(e) => e.stopPropagation()}>
@@ -300,11 +297,10 @@ export default function LeadsOverview() {
                   <button
                     key={p}
                     onClick={() => handlePageChange(p)}
-                    className={`w-8 h-8 rounded text-label-sm ${
-                      p === pagination.page
-                        ? 'bg-primary text-on-primary font-bold'
-                        : 'text-on-surface-variant hover:bg-surface-container-low'
-                    }`}
+                    className={`w-8 h-8 rounded text-label-sm ${p === pagination.page
+                      ? 'bg-primary text-on-primary font-bold'
+                      : 'text-on-surface-variant hover:bg-surface-container-low'
+                      }`}
                   >
                     {p}
                   </button>
